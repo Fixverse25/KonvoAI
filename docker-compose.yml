@@ -42,32 +42,20 @@ services:
       start_period: 40s
 
   # =============================================================================
-  # Frontend Service (React TypeScript)
+  # Frontend Service (Static HTML/CSS/JS)
   # =============================================================================
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      target: development
-    container_name: eva-dev-frontend
+    container_name: konvoai-frontend
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
-    environment:
-      - NODE_ENV=development
-      - REACT_APP_BACKEND_URL=${DEV_BACKEND_URL:-http://localhost:8000}
-      - REACT_APP_WEBSOCKET_URL=${DEV_BACKEND_URL:-ws://localhost:8000}
-      - REACT_APP_ENVIRONMENT=development
-      - CHOKIDAR_USEPOLLING=true
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
     networks:
       - eva-dev-network
     depends_on:
       - backend
     restart: unless-stopped
-    stdin_open: true
-    tty: true
 
   # =============================================================================
   # Redis (for session management and caching)

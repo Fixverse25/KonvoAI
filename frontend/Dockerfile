@@ -1,63 +1,15 @@
 # =============================================================================
-# EVA-Dev Frontend Dockerfile
-# Multi-stage build for development and production
+# KonvoAI Frontend Dockerfile
+# Simple static file serving with nginx
 # =============================================================================
 
-FROM node:18-alpine as base
+FROM nginx:alpine
 
-# Set working directory
-WORKDIR /app
+# Copy static files
+COPY public/ /usr/share/nginx/html/
 
-# Install dependencies for node-gyp
-RUN apk add --no-cache python3 make g++
-
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies
-RUN npm ci --only=production && npm cache clean --force
-
-# =============================================================================
-# Development Stage
-# =============================================================================
-FROM base as development
-
-# Install all dependencies (including dev)
-RUN npm ci
-
-# Copy source code
-COPY . .
-
-# Expose port
-EXPOSE 3000
-
-# Development command
-CMD ["npm", "start"]
-
-# =============================================================================
-# Build Stage
-# =============================================================================
-FROM base as build
-
-# Install all dependencies for build
-RUN npm ci
-
-# Copy source code
-COPY . .
-
-# Build the application
-RUN npm run build
-
-# =============================================================================
-# Production Stage
-# =============================================================================
-FROM nginx:alpine as production
-
-# Copy custom nginx config
+# Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
-
-# Copy built application
-COPY --from=build /app/build /usr/share/nginx/html
 
 # Add non-root user
 RUN addgroup -g 1001 -S nodejs && \

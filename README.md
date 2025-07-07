@@ -1,17 +1,27 @@
-# KonvoAI: Voice-Enabled EV Charging Support AI
+# KonvoAI: AI-Driven EV Charging Support
 
-KonvoAI (formerly EVA-Dev) is a conversational AI assistant specialized in EV charging support, featuring both text chat and voice interaction capabilities.
+KonvoAI är en svensk AI-assistent specialiserad på elbilsladdning och support. Systemet erbjuder intelligent textchatt för att hjälpa användare med laddstationer, felsökning och elbilsrelaterade frågor.
 
-## 🏗️ Architecture
+## ✨ Funktioner
+
+- 💬 **Intelligent Textchatt**: Realtidskonversation med AI-driven support
+- 🧠 **Elbilsexpertis**: Specialiserad kunskap inom elbilsladdning
+- 🔄 **Sessionshantering**: Beständig konversationshistorik
+- 🐳 **Containeriserad**: Komplett Docker-deployment med produktionsoptimering
+- 🔒 **Produktionsklar**: HTTPS, säkerhetsheaders, hastighetsbegränsning
+- 📱 **Responsiv**: Fungerar på desktop och mobila enheter
+- 🇸🇪 **Svensk**: Fullständigt svenskt gränssnitt och support
+
+## 🏗️ Arkitektur
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Frontend      │    │    Backend      │    │  External APIs  │
-│  (React/TS)     │◄──►│  (FastAPI/Py)   │◄──►│                 │
-│                 │    │                 │    │ • Azure Speech  │
-│ • Chat Widget   │    │ • REST API      │    │ • Claude API    │
-│ • Push-to-Talk  │    │ • WebSocket     │    │                 │
-│ • Audio Capture │    │ • STT/TTS       │    └─────────────────┘
+│ (HTML/CSS/JS)   │◄──►│  (FastAPI/Py)   │◄──►│                 │
+│                 │    │                 │    │ • Claude API    │
+│ • Chat Widget   │    │ • REST API      │    │ • Azure Speech  │
+│ • Snabbsvar     │    │ • AI Integration│    │   (optional)    │
+│ • Responsiv UI  │    │ • Logging       │    └─────────────────┘
 └─────────────────┘    └─────────────────┘
 ```
 

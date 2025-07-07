@@ -36,6 +36,7 @@ class ChatRequest(BaseModel):
     message: str
     session_id: str = None
     stream: bool = False
+    history: List[Dict[str, str]] = []
 
 
 class ChatResponse(BaseModel):
@@ -220,3 +221,24 @@ async def clear_chat_history(
     except Exception as e:
         logger.error(f"Clear chat history error: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.post("/log-message")
+@limiter.limit(f"{settings.rate_limit_requests_per_minute}/minute")
+async def log_message(
+    request: Request,
+    message_data: Dict[str, str]
+) -> Dict[str, str]:
+    """
+    Log a user message for analytics/monitoring
+    """
+    try:
+        message = message_data.get("message", "")
+        if message:
+            logger.info(f"User message logged: {message[:100]}...")
+
+        return {"status": "logged"}
+
+    except Exception as e:
+        logger.error(f"Log message error: {e}")
+        return {"status": "error"}
