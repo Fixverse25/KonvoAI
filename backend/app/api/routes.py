@@ -5,7 +5,7 @@ Main router that includes all API endpoints
 
 from fastapi import APIRouter
 
-from app.api.endpoints import chat, voice, health
+from app.api.endpoints import chat, voice, health, gdpr
 
 # Create main API router
 api_router = APIRouter()
@@ -27,4 +27,10 @@ api_router.include_router(
     voice.router,
     prefix="/voice",
     tags=["voice"]
+)
+
+api_router.include_router(
+    gdpr.router,
+    prefix="/gdpr",
+    tags=["gdpr", "privacy"]
 )

@@ -15,6 +15,7 @@ from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.services.claude_service import claude_service
 from app.services.redis_service import redis_service
+from app.services.gdpr_service import gdpr_service
 
 router = APIRouter()
 logger = get_logger(__name__)
@@ -59,6 +60,12 @@ async def chat(
         # Generate session ID if not provided
         session_id = chat_request.session_id or str(uuid.uuid4())
         message_id = str(uuid.uuid4())
+
+        # GDPR Compliance: Check consent before processing
+        if not gdpr_service.check_consent(session_id):
+            # Create data subject for legitimate interest (EV charging support)
+            gdpr_service.create_data_subject(session_id, consent=True)
+            logger.info(f"Created GDPR data subject for session: {session_id}")
         
         # Get conversation history from Redis
         conversation_key = f"conversation:{session_id}"
