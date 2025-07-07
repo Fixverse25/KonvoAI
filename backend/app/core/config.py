@@ -40,7 +40,14 @@ class Settings(BaseSettings):
     # CORS and Security
     # =============================================================================
     allowed_origins: List[str] = Field(
-        default=["http://localhost:3000"],
+        default=[
+            "http://localhost:3000",
+            "http://localhost:8080",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:8080",
+            "file://",
+            "null"  # For file:// protocol
+        ],
         env="ALLOWED_ORIGINS"
     )
     allowed_hosts: List[str] = Field(
