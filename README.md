@@ -5,8 +5,10 @@ KonvoAI är en svensk AI-assistent specialiserad på elbilsladdning och support.
 ## ✨ Funktioner
 
 - 💬 **Intelligent Textchatt**: Realtidskonversation med AI-driven support
-- 🧠 **Elbilsexpertis**: Specialiserad kunskap inom elbilsladdning
-- 🔄 **Sessionshantering**: Beständig konversationshistorik
+- 🗣️ **Svensk Röstfunktion**: Azure Speech Services optimerad för svenska
+- 🧠 **Elbilsexpertis**: Specialiserad kunskap inom elbilsladdning med EV-terminologi
+- 🔄 **Sessionshantering**: Beständig konversationshistorik med GDPR-compliance
+- 🇪🇺 **GDPR-kompatibel**: Fullständig dataskydd med EU-datalagring
 - 🐳 **Containeriserad**: Komplett Docker-deployment med produktionsoptimering
 - 🔒 **Produktionsklar**: HTTPS, säkerhetsheaders, hastighetsbegränsning
 - 📱 **Responsiv**: Fungerar på desktop och mobila enheter
@@ -18,11 +20,12 @@ KonvoAI är en svensk AI-assistent specialiserad på elbilsladdning och support.
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Frontend      │    │    Backend      │    │  External APIs  │
 │ (HTML/CSS/JS)   │◄──►│  (FastAPI/Py)   │◄──►│                 │
-│                 │    │                 │    │ • Claude API    │
-│ • Chat Widget   │    │ • REST API      │    │ • Azure Speech  │
-│ • Snabbsvar     │    │ • AI Integration│    │   (optional)    │
-│ • Responsiv UI  │    │ • Logging       │    └─────────────────┘
-└─────────────────┘    └─────────────────┘
+│                 │    │                 │    │ • Claude 3.5    │
+│ • Chat Widget   │    │ • REST API      │    │   Sonnet        │
+│ • Snabbsvar     │    │ • AI Integration│    │ • Azure Speech  │
+│ • Responsiv UI  │    │ • Speech STT/TTS│    │   (sv-SE)       │
+│ • GDPR Dialog   │    │ • GDPR Service  │    │ • Sweden Central│
+└─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
 ## 🚀 Quick Start
@@ -46,8 +49,14 @@ KonvoAI är en svensk AI-assistent specialiserad på elbilsladdning och support.
 
 3. Configure required environment variables:
    ```bash
-   # Azure Speech Services
+   # Anthropic Claude API
+   ANTHROPIC_API_KEY=your_anthropic_api_key
+
+   # Azure Speech Services (Swedish Optimized)
    AZURE_SPEECH_KEY=your_azure_speech_key
+   AZURE_SPEECH_REGION=swedencentral
+   AZURE_SPEECH_LANGUAGE=sv-SE
+   AZURE_SPEECH_VOICE=sv-SE-SofiaNeural
    AZURE_SPEECH_REGION=your_azure_region
 
    # Claude API
@@ -76,29 +85,84 @@ docker-compose down
 docker-compose -f docker-compose.prod.yml up -d
 ```
 
+## 🗣️ Azure Speech Services (Swedish Optimized)
+
+KonvoAI använder Azure Speech Services för röstfunktionalitet optimerad för svenska användare.
+
+### 🇸🇪 Svensk Konfiguration
+
+**Region & Prestanda:**
+- **Region**: `swedencentral` - Lägsta latens för svenska användare
+- **Språk**: `sv-SE` (Svenska - Sverige)
+- **Röster**: Sofia Neural (kvinna), Mattias Neural (man)
+
+**EV-Terminologi Optimering:**
+```
+Optimerade svenska EV-termer:
+• elbil, laddstation, laddkabel, snabbladdning
+• AC/DC-laddning, CCS, CHAdeMO, Type 2
+• Tesla, Supercharger, kilowatt (kW), kWh
+• batteri, räckvidd, hemmaladdning, laddtid
+• offentlig laddning, laddningshastighet
+```
+
+**Ljudkvalitet:**
+- **Samplingsfrekvens**: 16kHz (optimerad för röst)
+- **Format**: MP3-komprimering för effektivitet
+- **Kanaler**: Mono (röstoptimerad)
+- **Läge**: Konversation med svensk interpunktion
+
+### 🎯 Speech-to-Text (STT)
+```python
+# Exempel på svensk röstinmatning
+"Hur laddar jag min elbil hemma?"
+"Var finns närmaste snabbladdare?"
+"Vad kostar det att ladda på Ionity?"
+```
+
+### 🔊 Text-to-Speech (TTS)
+```python
+# Svenska AI-svar med naturlig röst
+"För hemmaladdning rekommenderar jag en 11 kW laddbox..."
+"Närmaste CCS-snabbladdare finns 2 km bort..."
+```
+
+### 🔧 API Endpoints
+```bash
+# Röstfunktioner
+POST /api/v1/voice/speech-to-text    # Konvertera tal till text
+POST /api/v1/voice/text-to-speech    # Konvertera text till tal
+GET  /api/v1/voice/voices            # Tillgängliga svenska röster
+```
+
 ## 📁 Project Structure
 
 ```
 KonvoAI/
 ├── backend/                 # Python FastAPI backend
 │   ├── app/
-│   │   ├── api/            # API routes
+│   │   ├── api/            # API routes & endpoints
+│   │   │   └── endpoints/  # Chat, Voice, GDPR endpoints
 │   │   ├── core/           # Core configuration
 │   │   ├── services/       # Business logic
+│   │   │   ├── claude_service.py      # Claude AI integration
+│   │   │   ├── azure_speech_service.py # Swedish speech services
+│   │   │   ├── gdpr_service.py        # GDPR compliance
+│   │   │   └── redis_service.py       # Session management
 │   │   └── models/         # Data models
 │   ├── Dockerfile
 │   └── requirements.txt
-├── frontend/               # React TypeScript frontend
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   ├── hooks/          # Custom hooks
-│   │   ├── services/       # API clients
-│   │   └── types/          # TypeScript types
-│   ├── Dockerfile
-│   └── package.json
+├── frontend/               # Static HTML/CSS/JS frontend
+│   ├── public/
+│   │   ├── index.html      # Swedish chat widget
+│   │   ├── robots.txt      # SEO optimization
+│   │   └── favicon.ico     # Site icon
+│   ├── Dockerfile          # Nginx static serving
+│   └── nginx.conf          # Web server config
 ├── docker-compose.yml      # Development environment
 ├── docker-compose.prod.yml # Production environment
 ├── .env.example           # Environment template
+├── Makefile               # Development commands
 └── docs/                  # Documentation
 ```
 
@@ -140,12 +204,37 @@ Once running, visit:
 - Development: http://localhost:8000/docs
 - Production: https://api.fixverse.se/docs
 
+## 🇪🇺 GDPR Compliance
+
+KonvoAI är fullständigt GDPR-kompatibel med dataskydd enligt EU-lagstiftning.
+
+### 🔐 Dataskydd
+- **Datalagring**: Endast inom EU (Sverige/Sweden Central)
+- **Pseudonymisering**: Alla användaridentifierare pseudonymiseras
+- **Dataretention**: 7 dagar för konversationer, 30 dagar för metadata
+- **Rättigheter**: Tillgång, portabilitet, radering enligt GDPR
+
+### 🛡️ Privacy by Design
+```bash
+# GDPR API endpoints
+GET  /api/v1/gdpr/privacy-notice     # Integritetspolicy
+POST /api/v1/gdpr/consent           # Samtycke
+GET  /api/v1/gdpr/export/{session}  # Dataexport (Art. 20)
+DELETE /api/v1/gdpr/data/{session}  # Radera data (Art. 17)
+```
+
+### 📋 Datakategorier
+- **Konversationsdata**: Chattmeddelanden och AI-svar
+- **Sessionsmetadata**: Sessionsidentifierare och tidsstämplar
+- **Användningsanalys**: Anonymiserad statistik (valfritt)
+
 ## 🔒 Security
 
 - All communication over HTTPS in production
 - API key management via environment variables
 - CORS configuration for frontend domain
 - Rate limiting on API endpoints
+- GDPR-compliant data handling and storage
 
 ## 🤝 Contributing
 
