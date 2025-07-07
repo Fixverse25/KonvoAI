@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  # =============================================================================
+  # Backend Tests
+  # =============================================================================
+  backend-test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: eva-dev-backend-test
+    environment:
+      - ENVIRONMENT=test
+      - AZURE_SPEECH_KEY=${AZURE_SPEECH_KEY}
+      - AZURE_SPEECH_REGION=${AZURE_SPEECH_REGION}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - SECRET_KEY=test-secret-key
+      - REDIS_URL=redis://redis-test:6379/0
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - ./backend:/app
+    networks:
+      - eva-test-network
+    depends_on:
+      - redis-test
+    command: ["python", "-m", "pytest", "-v", "--cov=app", "--cov-report=html", "--cov-report=term"]
+
+  # =============================================================================
+  # Frontend Tests
+  # =============================================================================
+  frontend-test:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: eva-dev-frontend-test
+    environment:
+      - NODE_ENV=test
+      - CI=true
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - eva-test-network
+    command: ["npm", "test", "--", "--coverage", "--watchAll=false"]
+
+  # =============================================================================
+  # Redis for Testing
+  # =============================================================================
+  redis-test:
+    image: redis:7-alpine
+    container_name: eva-dev-redis-test
+    networks:
+      - eva-test-network
+    command: redis-server --appendonly no --save ""
+
+  # =============================================================================
+  # Integration Tests
+  # =============================================================================
+  integration-test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: eva-dev-integration-test
+    environment:
+      - ENVIRONMENT=test
+      - AZURE_SPEECH_KEY=${AZURE_SPEECH_KEY}
+      - AZURE_SPEECH_REGION=${AZURE_SPEECH_REGION}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - SECRET_KEY=test-secret-key
+      - REDIS_URL=redis://redis-test:6379/0
+      - BACKEND_URL=http://backend-test:8000
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - ./tests:/app/tests
+      - ./backend:/app
+    networks:
+      - eva-test-network
+    depends_on:
+      - backend-test
+      - redis-test
+    command: ["python", "-m", "pytest", "tests/integration/", "-v"]
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  eva-test-network:
+    driver: bridge
+    name: eva-test-network
