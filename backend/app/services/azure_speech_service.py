@@ -1,6 +1,7 @@
 """
-Azure Speech Service
+Azure Speech Service - Swedish Optimized
 Handles speech-to-text and text-to-speech operations using Azure Cognitive Services
+Optimized for Swedish language and EV charging terminology
 """
 
 import asyncio
@@ -16,25 +17,55 @@ settings = get_settings()
 
 
 class AzureSpeechService:
-    """Azure Speech Service for STT and TTS operations"""
-    
+    """Azure Speech Service optimized for Swedish EV charging support"""
+
     def __init__(self):
         self.speech_config = speechsdk.SpeechConfig(
             subscription=settings.azure_speech_key,
             region=settings.azure_speech_region
         )
-        self.speech_config.speech_recognition_language = settings.azure_speech_language
-        self.speech_config.speech_synthesis_voice_name = settings.azure_speech_voice
-        
-        # Configure audio format for better quality
+
+        # Swedish language configuration
+        self.speech_config.speech_recognition_language = getattr(settings, 'azure_speech_language', 'sv-SE')
+        self.speech_config.speech_synthesis_voice_name = getattr(settings, 'azure_speech_voice', 'sv-SE-SofiaNeural')
+
+        # Swedish EV charging terminology for better recognition
+        self.ev_phrase_list = [
+            "elbil", "elbilen", "elbilar", "elbilarna",
+            "laddstation", "laddstationen", "laddstationer", "laddstationerna",
+            "laddkabel", "laddkabeln", "laddkablar", "laddkablarna",
+            "snabbladdning", "snabbladdningen", "AC-laddning", "DC-laddning",
+            "CCS", "CHAdeMO", "Type 2", "Tesla", "Supercharger",
+            "kilowatt", "kW", "kilowattimme", "kWh", "batteri", "räckvidd",
+            "hemmaladdning", "offentlig laddning", "laddtid", "laddningshastighet"
+        ]
+
+        # Configure for Swedish conversation mode
         self.speech_config.set_property(
-            speechsdk.PropertyId.SpeechServiceConnection_InitialSilenceTimeoutMs, 
+            speechsdk.PropertyId.SpeechServiceConnection_RecognitionMode,
+            "conversation"
+        )
+
+        # Enable detailed output for better accuracy
+        self.speech_config.output_format = speechsdk.OutputFormat.Detailed
+
+        # Configure timeouts for Swedish speech patterns
+        self.speech_config.set_property(
+            speechsdk.PropertyId.SpeechServiceConnection_InitialSilenceTimeoutMs,
             "5000"
         )
         self.speech_config.set_property(
             speechsdk.PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs,
-            str(settings.silence_timeout_seconds * 1000)
+            str(getattr(settings, 'silence_timeout_seconds', 3) * 1000)
         )
+
+        # Set profanity handling
+        self.speech_config.set_property(
+            speechsdk.PropertyId.SpeechServiceResponse_ProfanityOption,
+            "Masked"
+        )
+
+        logger.info(f"Azure Speech configured for Swedish (region: {settings.azure_speech_region})")
     
     async def speech_to_text(self, audio_data: bytes) -> Optional[str]:
         """
