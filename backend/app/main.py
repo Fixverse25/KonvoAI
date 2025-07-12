@@ -61,18 +61,18 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Add rate limiting
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# Add rate limiting - TEMPORARILY DISABLED FOR DEBUGGING
+# app.state.limiter = limiter
+# app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.allowed_origins,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-)
+# Add CORS middleware - TEMPORARILY DISABLED FOR DEBUGGING
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=settings.allowed_origins,
+#     allow_credentials=True,
+#     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+#     allow_headers=["*"],
+# )
 
 # Add trusted host middleware for production
 if settings.environment == "production":

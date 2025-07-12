@@ -35,11 +35,25 @@ def convert_audio_format(
         Converted audio bytes or None if conversion failed
     """
     try:
-        # Load audio data
-        audio = AudioSegment.from_file(
-            io.BytesIO(audio_data),
-            format=input_format
-        )
+        # Load audio data with fallback for WebM
+        if input_format.lower() == 'webm':
+            # Try WebM first, fallback to OGG
+            try:
+                audio = AudioSegment.from_file(
+                    io.BytesIO(audio_data),
+                    format='webm'
+                )
+            except Exception:
+                logger.warning("WebM decode failed, trying OGG format")
+                audio = AudioSegment.from_file(
+                    io.BytesIO(audio_data),
+                    format='ogg'
+                )
+        else:
+            audio = AudioSegment.from_file(
+                io.BytesIO(audio_data),
+                format=input_format
+            )
         
         # Convert to target format
         audio = audio.set_frame_rate(sample_rate)

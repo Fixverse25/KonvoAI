@@ -12,12 +12,22 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Install system dependencies
+# Install system dependencies including audio system packages for Azure Speech SDK
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
     ffmpeg \
     libsndfile1 \
+    libopus0 \
+    libvorbis0a \
+    libwebp7 \
+    libasound2-dev \
+    alsa-utils \
+    pulseaudio \
+    libpulse-dev \
+    libasound2 \
+    libssl-dev \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Create app directory

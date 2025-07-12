@@ -45,7 +45,7 @@ class GDPRService:
             return identifier
             
         # Create a salted hash for pseudonymization
-        salt = settings.SECRET_KEY.encode()
+        salt = settings.secret_key.encode()
         pseudonym = hashlib.sha256(f"{identifier}{salt}".encode()).hexdigest()[:16]
         return f"ps_{pseudonym}"
     

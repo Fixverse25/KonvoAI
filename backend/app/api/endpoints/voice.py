@@ -147,8 +147,8 @@ async def text_to_speech(
         if len(tts_request.text) > 5000:
             raise HTTPException(status_code=400, detail="Text too long for synthesis")
         
-        # Convert text to speech
-        audio_data = await azure_speech_service.text_to_speech(tts_request.text)
+        # Convert text to speech with fallback
+        audio_data = await azure_speech_service.text_to_speech_with_fallback(tts_request.text)
         
         if not audio_data:
             raise HTTPException(status_code=500, detail="Speech synthesis failed")
@@ -239,8 +239,8 @@ async def voice_chat(
         if not response_text:
             raise HTTPException(status_code=500, detail="Failed to get AI response")
         
-        # Step 4: Convert response to speech
-        response_audio_data = await azure_speech_service.text_to_speech(response_text)
+        # Step 4: Convert response to speech with fallback
+        response_audio_data = await azure_speech_service.text_to_speech_with_fallback(response_text)
         if not response_audio_data:
             raise HTTPException(status_code=500, detail="Failed to synthesize speech")
         

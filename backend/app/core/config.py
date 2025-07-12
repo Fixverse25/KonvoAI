@@ -7,7 +7,7 @@ import os
 from functools import lru_cache
 from typing import List, Optional
 
-from pydantic import Field, validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     # =============================================================================
     environment: str = Field(default="development", env="ENVIRONMENT")
     log_level: str = Field(default="INFO", env="LOG_LEVEL")
-    secret_key: str = Field(..., env="SECRET_KEY")
+    secret_key: str = Field(default="dev-secret-key", env="SECRET_KEY")
     
     # =============================================================================
     # Azure Speech Services
@@ -39,17 +39,15 @@ class Settings(BaseSettings):
     # =============================================================================
     # CORS and Security
     # =============================================================================
-    allowed_origins: List[str] = Field(
-        default=[
-            "http://localhost:3000",
-            "http://localhost:8080",
-            "http://127.0.0.1:3000",
-            "http://127.0.0.1:8080",
-            "file://",
-            "null"  # For file:// protocol
-        ],
+    allowed_origins_str: str = Field(
+        default="http://localhost:3000,http://localhost:8080,http://127.0.0.1:3000,http://127.0.0.1:8080,file://,null",
         env="ALLOWED_ORIGINS"
     )
+
+    @property
+    def allowed_origins(self) -> List[str]:
+        """Parse allowed origins from string"""
+        return [origin.strip() for origin in self.allowed_origins_str.split(",")]
     allowed_hosts: List[str] = Field(
         default=["localhost", "127.0.0.1", "fixverse.se", "api.fixverse.se"],
         env="ALLOWED_HOSTS"
@@ -77,21 +75,18 @@ class Settings(BaseSettings):
     # =============================================================================
     database_url: Optional[str] = Field(default=None, env="DATABASE_URL")
     
-    @validator("allowed_origins", pre=True)
-    def parse_cors_origins(cls, v):
-        """Parse CORS origins from string or list"""
-        if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",")]
-        return v
-    
-    @validator("allowed_hosts", pre=True)
+    # Removed field validator - using property instead
+
+    @field_validator("allowed_hosts", mode="before")
+    @classmethod
     def parse_allowed_hosts(cls, v):
         """Parse allowed hosts from string or list"""
         if isinstance(v, str):
             return [host.strip() for host in v.split(",")]
         return v
-    
-    @validator("log_level")
+
+    @field_validator("log_level")
+    @classmethod
     def validate_log_level(cls, v):
         """Validate log level"""
         valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -99,7 +94,8 @@ class Settings(BaseSettings):
             raise ValueError(f"Log level must be one of: {valid_levels}")
         return v.upper()
     
-    @validator("environment")
+    @field_validator("environment")
+    @classmethod
     def validate_environment(cls, v):
         """Validate environment"""
         valid_envs = ["development", "staging", "production"]
@@ -111,6 +107,7 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False
+        extra = "allow"
 
 
 @lru_cache()

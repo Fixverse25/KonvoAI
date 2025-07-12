@@ -15,11 +15,13 @@ COPY nginx.conf /etc/nginx/nginx.conf
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001
 
-# Change ownership
+# Change ownership and create necessary directories
 RUN chown -R nextjs:nodejs /usr/share/nginx/html && \
     chown -R nextjs:nodejs /var/cache/nginx && \
     chown -R nextjs:nodejs /var/log/nginx && \
-    chown -R nextjs:nodejs /etc/nginx/conf.d
+    chown -R nextjs:nodejs /etc/nginx/conf.d && \
+    mkdir -p /tmp/nginx && \
+    chown -R nextjs:nodejs /tmp/nginx
 
 # Switch to non-root user
 USER nextjs

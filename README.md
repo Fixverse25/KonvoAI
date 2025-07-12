@@ -30,10 +30,13 @@ KonvoAI är en svensk AI-assistent specialiserad på elbilsladdning och support.
 
 ## 🚀 Quick Start
 
+> **Status Update (2025-07-08)**: ✅ Development environment fully operational!
+> Backend: http://localhost:8000 | Frontend: http://localhost:3000 | Redis: Running
+
 ### Prerequisites
 - Docker & Docker Compose
-- Node.js 18+ (for local development)
-- Python 3.11+ (for local development)
+- Python 3.9+ (for local development)
+- Git
 
 ### Environment Setup
 1. Clone the repository:
@@ -67,7 +70,25 @@ KonvoAI är en svensk AI-assistent specialiserad på elbilsladdning och support.
    BACKEND_URL=https://api.fixverse.se
    ```
 
-### Development
+### Development (Current Working Setup)
+
+#### Option 1: Manual Service Start (Recommended for Development)
+```bash
+# 1. Start Redis cache
+docker run -d --name redis-eva --network eva-dev-network -p 6379:6379 redis:7-alpine
+
+# 2. Start Backend API
+cd backend
+pip3 install -r requirements.txt
+cp ../.env .
+python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+# 3. Start Frontend (new terminal)
+cd frontend/public
+python3 -m http.server 3000
+```
+
+#### Option 2: Docker Compose (Work in Progress)
 ```bash
 # Start all services
 docker-compose up -d
@@ -78,6 +99,12 @@ docker-compose logs -f
 # Stop services
 docker-compose down
 ```
+
+### Access Points
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8000
+- **API Documentation**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/api/v1/health/
 
 ### Production Deployment
 ```bash

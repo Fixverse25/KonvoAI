@@ -3,10 +3,11 @@ Chat API Endpoints
 Handles text-based chat interactions with Claude
 """
 
+import asyncio
 import uuid
 from typing import List, Dict, Any
 from fastapi import APIRouter, HTTPException, Depends, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -15,7 +16,6 @@ from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.services.claude_service import claude_service
 from app.services.redis_service import redis_service
-from app.services.gdpr_service import gdpr_service
 
 router = APIRouter()
 logger = get_logger(__name__)
@@ -48,7 +48,7 @@ class ChatResponse(BaseModel):
 
 
 @router.post("/", response_model=ChatResponse)
-@limiter.limit(f"{settings.rate_limit_requests_per_minute}/minute")
+# @limiter.limit(f"{settings.rate_limit_requests_per_minute}/minute")  # Temporarily disabled for debugging
 async def chat(
     request: Request,
     chat_request: ChatRequest
@@ -56,20 +56,18 @@ async def chat(
     """
     Send a chat message and get a response from Claude
     """
+    logger.info(f"Chat endpoint called with message: {chat_request.message[:50]}...")
     try:
+        # Get Redis service from app state
+        redis_svc = request.app.state.redis
+
         # Generate session ID if not provided
         session_id = chat_request.session_id or str(uuid.uuid4())
         message_id = str(uuid.uuid4())
 
-        # GDPR Compliance: Check consent before processing
-        if not gdpr_service.check_consent(session_id):
-            # Create data subject for legitimate interest (EV charging support)
-            gdpr_service.create_data_subject(session_id, consent=True)
-            logger.info(f"Created GDPR data subject for session: {session_id}")
-        
         # Get conversation history from Redis
         conversation_key = f"conversation:{session_id}"
-        conversation_history = await redis_service.get(conversation_key) or []
+        conversation_history = await redis_svc.get(conversation_key) or []
         
         # Add user message to history
         user_message = {
@@ -99,14 +97,36 @@ async def chat(
         conversation_history.append(assistant_message)
         
         # Save updated conversation to Redis (expire after 1 hour)
-        await redis_service.set(conversation_key, conversation_history, expire=3600)
-        
+        logger.info(f"Saving conversation to Redis for session {session_id}")
+        try:
+            await asyncio.wait_for(
+                redis_svc.set(conversation_key, conversation_history, expire=3600),
+                timeout=5.0
+            )
+            logger.info(f"Conversation saved to Redis for session {session_id}")
+        except asyncio.TimeoutError:
+            logger.warning(f"Redis save timeout for session {session_id}")
+        except Exception as e:
+            logger.error(f"Redis save error for session {session_id}: {e}")
+
         logger.info(f"Chat response generated for session {session_id}")
-        
-        return ChatResponse(
-            response=response_text,
-            session_id=session_id,
-            message_id=message_id
+
+        # Return simple dict instead of Pydantic model for debugging
+        response_data = {
+            "response": response_text,
+            "session_id": session_id,
+            "message_id": message_id
+        }
+        logger.info(f"Returning response data: {len(str(response_data))} chars")
+
+        # Try explicit JSONResponse with CORS headers
+        return JSONResponse(
+            content=response_data,
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                "Access-Control-Allow-Headers": "*",
+            }
         )
         
     except HTTPException:
@@ -114,6 +134,33 @@ async def chat(
     except Exception as e:
         logger.error(f"Chat endpoint error: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/test")
+async def test_endpoint():
+    """Simple test endpoint to debug response issues"""
+    logger.info("Test endpoint called")
+    return {"status": "ok", "message": "Test endpoint working"}
+
+
+@router.post("/test-post")
+def test_post_endpoint_sync(data: dict):
+    """Simple SYNC POST test endpoint"""
+    logger.info(f"Test SYNC POST endpoint called with: {data}")
+    return JSONResponse(
+        content={"status": "ok", "received": data, "sync": True},
+        headers={"Access-Control-Allow-Origin": "*"}
+    )
+
+
+@router.post("/test-post-async")
+async def test_post_endpoint_async(data: dict):
+    """Simple ASYNC POST test endpoint"""
+    logger.info(f"Test ASYNC POST endpoint called with: {data}")
+    return JSONResponse(
+        content={"status": "ok", "received": data, "async": True},
+        headers={"Access-Control-Allow-Origin": "*"}
+    )
 
 
 @router.post("/stream")

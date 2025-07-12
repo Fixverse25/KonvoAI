@@ -6,6 +6,7 @@ Handles interactions with Anthropic's Claude API for conversational AI
 import asyncio
 from typing import List, Dict, Any, Optional, AsyncGenerator
 from anthropic import AsyncAnthropic
+import httpx
 from app.core.config import get_settings
 from app.core.logging import get_logger
 
@@ -17,7 +18,14 @@ class ClaudeService:
     """Claude API service for conversational AI"""
     
     def __init__(self):
-        self.client = AsyncAnthropic(api_key=settings.anthropic_api_key)
+        # Configure HTTP client with timeout
+        http_client = httpx.AsyncClient(
+            timeout=httpx.Timeout(30.0, connect=10.0)  # 30s total, 10s connect
+        )
+        self.client = AsyncAnthropic(
+            api_key=settings.anthropic_api_key,
+            http_client=http_client
+        )
         self.system_prompt = self._get_system_prompt()
     
     def _get_system_prompt(self) -> str:
@@ -88,6 +96,8 @@ Remember: You're here to make EV charging easier and more reliable for everyone.
             Response text or None if failed
         """
         try:
+            logger.info(f"Starting Claude API call with {len(messages)} messages")
+
             # Prepare messages for Claude API
             claude_messages = []
             for msg in messages:
@@ -96,18 +106,25 @@ Remember: You're here to make EV charging easier and more reliable for everyone.
                         "role": msg["role"],
                         "content": msg["content"]
                     })
-            
+
             if not claude_messages:
                 logger.warning("No valid messages provided to Claude")
                 return None
-            
-            # Make API call
-            response = await self.client.messages.create(
-                model=settings.claude_model,
-                max_tokens=settings.claude_max_tokens,
-                system=self.system_prompt,
-                messages=claude_messages
+
+            logger.info(f"Prepared {len(claude_messages)} messages for Claude API")
+
+            # Make API call with timeout
+            logger.info("Making Claude API call...")
+            response = await asyncio.wait_for(
+                self.client.messages.create(
+                    model=settings.claude_model,
+                    max_tokens=settings.claude_max_tokens,
+                    system=self.system_prompt,
+                    messages=claude_messages
+                ),
+                timeout=25.0  # 25 second timeout
             )
+            logger.info("Claude API call completed successfully")
             
             if response.content and len(response.content) > 0:
                 # Extract text from response
@@ -119,8 +136,11 @@ Remember: You're here to make EV charging easier and more reliable for everyone.
             logger.warning("No content in Claude response")
             return None
             
+        except asyncio.TimeoutError:
+            logger.error("Claude API call timed out after 25 seconds")
+            return None
         except Exception as e:
-            logger.error(f"Claude API error: {e}")
+            logger.error(f"Claude API error: {type(e).__name__}: {e}")
             return None
     
     async def stream_completion(
